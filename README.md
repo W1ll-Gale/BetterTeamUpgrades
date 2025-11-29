@@ -30,7 +30,7 @@ _Note: I have only tested the upgrade sharing for modded upgrades with the MoreU
   
 - This feature can be turned off in config and supports [REPOConfig](https://thunderstore.io/c/repo/p/nickklmao/REPOConfig/) for live ingame config editing without needing to restart.
 
-  _(this means you can have late join player upgrade syncing on without needing shared upgrades on and vice versa)_
+  _(this means you can have shared upgrades on without needing late join player upgrade syncing on and vice versa)_
 
 _Note: I have only tested the late join player upgrade syncing for modded upgrades with the MoreUpgrades mod and all players are still required to have the modded upgrades mod(s), so keep that in mind and use those with your own risk. If your modded upgrades cause problems with this mod there is a setting in this mods config to turn off custom upgrade syncing._
 
