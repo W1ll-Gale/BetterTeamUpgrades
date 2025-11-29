@@ -36,7 +36,7 @@ _Note: I have only tested the late join player upgrade syncing for modded upgrad
 
 ## Future Plans
 - Currently none other then testing and making sure it works.
-- If you have any suggestions on additions feel free to open an issue on the [GitHub repository](https://github.com/W1ll-Gale/BetterTeamUpgrades) or message me on discord (@`mrbyte.exe`) and i will look into adding any new features!
+- If you have any suggestions on additions feel free to open an issue on the [GitHub repository](https://github.com/W1ll-Gale/BetterTeamUpgrades/issues) or message me on discord (@`mrbyte.exe`) and i will look into adding any new features!
 
 ## Issues
-If i have missed any upgrades or you find any bugs feel free to open an issue on the [GitHub repository](https://github.com/W1ll-Gale/BetterTeamUpgrades) or message me on discord (@`mrbyte.exe`) and i will try my best to fix any issues or update the mod for future updates.
+If i have missed any upgrades or you find any bugs feel free to open an issue on the [GitHub repository](https://github.com/W1ll-Gale/BetterTeamUpgrades/issues) or message me on discord (@`mrbyte.exe`) and i will try my best to fix any issues or update the mod for future updates.
