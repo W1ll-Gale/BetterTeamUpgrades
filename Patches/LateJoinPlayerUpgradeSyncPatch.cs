@@ -25,12 +25,21 @@ namespace BetterTeamUpgrades.Patches
                 return;
             }
 
-            __instance.StartCoroutine(SyncWithDelay());
+            __instance.StartCoroutine(SyncWithDelay(__instance));
         }
 
-        private static IEnumerator SyncWithDelay()
+        private static IEnumerator SyncWithDelay(PlayerAvatar newPlayer)
         {
-            yield return new WaitForSeconds(2f);
+            float timeWaited = 0f;
+            float timeout = 10f;
+
+            while (string.IsNullOrEmpty(SemiFunc.PlayerGetSteamID(newPlayer)) && timeWaited < timeout)
+            {
+                yield return new WaitForSeconds(0.5f);
+                timeWaited += 0.5f;
+            }
+
+            yield return new WaitForSeconds(1f);
 
             if (StatsManager.instance == null || PunManager.instance == null) yield break;
 
@@ -41,9 +50,18 @@ namespace BetterTeamUpgrades.Patches
                 yield break;
             }
 
-            List<PlayerAvatar> players = SemiFunc.PlayerGetAll();
-            if (players == null || !players.Any()) yield break;
+            string newPlayerID = SemiFunc.PlayerGetSteamID(newPlayer);
+            if (string.IsNullOrEmpty(newPlayerID))
+            {
+                Plugin.Log.LogWarning($"Late Join: Timed out waiting for SteamID for player {newPlayer.photonView.ViewID}. Skipping sync.");
+                yield break;
+            }
 
+            string playerName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(newPlayer);
+
+            Plugin.Log.LogInfo($"Late Join: Player {playerName} ({newPlayerID}) is ready. Starting sync...");
+
+            List<PlayerAvatar> players = SemiFunc.PlayerGetAll();
             List<string> steamIDs = players
                 .Select(p => SemiFunc.PlayerGetSteamID(p))
                 .Where(id => !string.IsNullOrEmpty(id))
@@ -54,7 +72,7 @@ namespace BetterTeamUpgrades.Patches
                 if (!kvp.Key.StartsWith("playerUpgrade")) continue;
 
                 string fullKey = kvp.Key;
-                Dictionary<string, int> upgradeDict = kvp.Value;
+                var upgradeDict = kvp.Value;
 
                 int maxLevel = 0;
                 foreach (string id in steamIDs)
@@ -86,23 +104,20 @@ namespace BetterTeamUpgrades.Patches
                             }
                             else
                             {
-                                if(!Configuration.EnableCustomUpgradeSyncing.Value)
-                                {
-                                    Plugin.Log.LogInfo($"Late Join: Skipped syncing custom upgrade {fullKey} for {id} (Custom Sync Disabled)");
-                                    continue;
-                                }
-
                                 punView.RPC("UpdateStatRPC", RpcTarget.Others, fullKey, id, maxLevel);
-
                                 upgradeDict[id] = maxLevel;
                             }
 
-                            Plugin.Log.LogInfo($"Late Join: Synced {fullKey} for {id} (Safe Mode: {!isVanilla})");
+                            string pName = "Unknown";
+                            PlayerAvatar pObj = players.FirstOrDefault(p => SemiFunc.PlayerGetSteamID(p) == id);
+                            if (pObj != null) pName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(pObj);
+
+                            Plugin.Log.LogInfo($"Late Join: Synced {fullKey} for {pName} (+{diff})");
                         }
                     }
                 }
             }
-            Plugin.Log.LogInfo("Late Join: Upgrade sync completed.");
+            Plugin.Log.LogInfo($"Late Join: Sync complete for {playerName}.");
         }
     }
 }
