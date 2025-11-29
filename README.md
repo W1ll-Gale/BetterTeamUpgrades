@@ -1,5 +1,5 @@
 # BetterTeamUpgrades
-A **host only** and **better** alternative to shared upgrade mods such as _SharedUpgrades_ or _TeamUpgrades_. This mod implements a robus and maintainable shared upgrade system that supports both vanilla upgrades and modded upgrades, as well as late join upgrade syncing.  
+A **host only** and **better alternative** to shared upgrade mods such as _SharedUpgrades_ or _TeamUpgrades_. This mod implements a robus and maintainable shared upgrade system that supports both vanilla upgrades and modded upgrades, as well as late join upgrade syncing.  
 
 Thank you for **100,000+** downloads!!
 
