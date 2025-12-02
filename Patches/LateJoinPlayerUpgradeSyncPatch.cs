@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Photon.Pun;
+using System;
 
 namespace BetterTeamUpgrades.Patches
 {
@@ -16,11 +17,11 @@ namespace BetterTeamUpgrades.Patches
         {
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            RunManager rm = RunManager.instance;
-            if (rm == null ||
-                rm.levelCurrent == rm.levelMainMenu ||
-                rm.levelCurrent == rm.levelRecording ||
-                rm.levelCurrent == rm.levelSplashScreen)
+            if (
+                RunManager.instance.levelCurrent == RunManager.instance.levelMainMenu ||
+                RunManager.instance.levelCurrent == RunManager.instance.levelLobby ||
+                RunManager.instance.levelCurrent == RunManager.instance.levelRecording ||
+                RunManager.instance.levelCurrent == RunManager.instance.levelSplashScreen)
             {
                 return;
             }
@@ -51,6 +52,7 @@ namespace BetterTeamUpgrades.Patches
             }
 
             string newPlayerID = SemiFunc.PlayerGetSteamID(newPlayer);
+
             if (string.IsNullOrEmpty(newPlayerID))
             {
                 Plugin.Log.LogWarning($"Late Join: Timed out waiting for SteamID for player {newPlayer.photonView.ViewID}. Skipping sync.");
@@ -66,6 +68,8 @@ namespace BetterTeamUpgrades.Patches
                 .Select(p => SemiFunc.PlayerGetSteamID(p))
                 .Where(id => !string.IsNullOrEmpty(id))
                 .ToList();
+
+            System.Random rand = new System.Random();
 
             foreach (KeyValuePair<string, Dictionary<string, int>> kvp in StatsManager.instance.dictionaryOfDictionaries)
             {
@@ -94,25 +98,36 @@ namespace BetterTeamUpgrades.Patches
 
                         if (diff > 0)
                         {
-                            if (isVanilla)
+                            for (int i = 0; i < diff; i++)
                             {
-                                string commandName = fullKey.Substring("playerUpgrade".Length);
-                                punView.RPC("TesterUpgradeCommandRPC", RpcTarget.Others, id, commandName, diff);
+                                int roll = rand.Next(0, 100);
+                                if (roll >= Configuration.LateJoinUpgradeSyncChance.Value)
+                                {
+                                    Plugin.Log.LogInfo($"Late Join: Skipped syncing {fullKey} for {id} due to chance roll ({roll} >= {Configuration.LateJoinUpgradeSyncChance.Value})");
+                                    continue;
+                                }
 
-                                if (upgradeDict.ContainsKey(id)) upgradeDict[id] += diff;
-                                else upgradeDict[id] = diff;
+                                if (isVanilla)
+                                {
+                                    string commandName = fullKey.Substring("playerUpgrade".Length);
+                                    punView.RPC("TesterUpgradeCommandRPC", RpcTarget.Others, id, commandName, 1);
+
+                                    if (upgradeDict.ContainsKey(id)) upgradeDict[id] += 1;
+                                    else upgradeDict[id] = 1;
+                                }
+                                else
+                                {
+                                    punView.RPC("UpdateStatRPC", RpcTarget.Others, fullKey, id, currentLevel + 1);
+                                    upgradeDict[id] = currentLevel + 1;
+                                }
+
+                                string pName = "Unknown";
+                                PlayerAvatar pObj = players.FirstOrDefault(p => SemiFunc.PlayerGetSteamID(p) == id);
+                                if (pObj != null) pName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(pObj);
+
+                                Plugin.Log.LogInfo($"Late Join: Synced {fullKey} for {pName} (+1)");
+                                currentLevel++;
                             }
-                            else
-                            {
-                                punView.RPC("UpdateStatRPC", RpcTarget.Others, fullKey, id, maxLevel);
-                                upgradeDict[id] = maxLevel;
-                            }
-
-                            string pName = "Unknown";
-                            PlayerAvatar pObj = players.FirstOrDefault(p => SemiFunc.PlayerGetSteamID(p) == id);
-                            if (pObj != null) pName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(pObj);
-
-                            Plugin.Log.LogInfo($"Late Join: Synced {fullKey} for {pName} (+{diff})");
                         }
                     }
                 }

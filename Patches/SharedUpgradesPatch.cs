@@ -1,8 +1,8 @@
-﻿using HarmonyLib;
+﻿using BetterTeamUpgrades.Config;
+using HarmonyLib;
 using Photon.Pun;
-using UnityEngine;
 using System.Collections.Generic;
-using BetterTeamUpgrades.Config;
+using System;
 
 namespace BetterTeamUpgrades.Patches
 {
@@ -14,6 +14,7 @@ namespace BetterTeamUpgrades.Patches
         private static Dictionary<string, int> _preUpgradeStats = new Dictionary<string, int>();
         private static string _targetSteamID;
         private static int _targetViewID;
+        private static string _targetPlayerName;
 
         [HarmonyPrefix]
         public static void Prefix(ItemUpgrade __instance)
@@ -24,6 +25,7 @@ namespace BetterTeamUpgrades.Patches
             if (toggle == null || !toggle.toggleState) return;
 
             _targetViewID = (int)AccessTools.Field(typeof(ItemToggle), "playerTogglePhotonID").GetValue(toggle);
+            _targetPlayerName = (string)AccessTools.Field(typeof(ItemToggle), "playerToggleName").GetValue(toggle);
 
             PlayerAvatar avatar = SemiFunc.PlayerAvatarGetFromPhotonID(_targetViewID);
             if (avatar == null) return;
@@ -60,6 +62,8 @@ namespace BetterTeamUpgrades.Patches
                 return;
             }
 
+            Random rand = new();
+
             foreach (KeyValuePair<string, Dictionary<string, int>> kvp in StatsManager.instance.dictionaryOfDictionaries)
             {
                 if (!kvp.Key.StartsWith("playerUpgrade")) continue;
@@ -72,7 +76,14 @@ namespace BetterTeamUpgrades.Patches
                     int diff = currentVal - preVal;
                     string fullKey = kvp.Key;
 
-                    Plugin.Log.LogInfo($"Detected upgrade: {fullKey} (+{diff}) for {_targetSteamID}");
+                    int roll = rand.Next(0, 100);
+                    if (roll >= Configuration.SharedUpgradeChange.Value)
+                    {
+                        Plugin.Log.LogInfo($"Skipped syncing {fullKey} due to chance roll ({roll} >= {Configuration.SharedUpgradeChange.Value})");
+                        continue;
+                    }
+
+                    Plugin.Log.LogInfo($"Detected upgrade: {fullKey} (+{diff}) for {_targetPlayerName}({_targetSteamID})");
 
                     if (VanillaKeys.Contains(fullKey))
                     {
@@ -98,41 +109,47 @@ namespace BetterTeamUpgrades.Patches
 
         private static void DistributeVanillaUpgrade(PhotonView punView, string command, int amount)
         {
-            List<PlayerAvatar> players = SemiFunc.PlayerGetAll();
-            foreach (var avatar in players)
+            foreach (PlayerAvatar player in SemiFunc.PlayerGetAll())
             {
-                if (avatar == null || avatar.photonView == null) continue;
-                if (avatar.photonView.ViewID == _targetViewID) 
+                if (player == null || player.photonView == null) continue;
+
+                if (player.photonView.ViewID == _targetViewID) 
                 {
-                    Plugin.Log.LogInfo($"Skipping original upgrader: {command} for {_targetSteamID}");
+                    Plugin.Log.LogInfo($"Skipping original upgrader: {command} for {_targetPlayerName}({_targetSteamID})");
                     continue; 
                 }
 
-                string pSteamID = (string)AccessTools.Field(typeof(PlayerAvatar), "steamID").GetValue(avatar);
-                if (string.IsNullOrEmpty(pSteamID)) continue;
+                string playerName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(player);
+                if (string.IsNullOrEmpty(playerName)) playerName = "Unknown";
 
-                punView.RPC("TesterUpgradeCommandRPC", RpcTarget.All, pSteamID, command, amount);
-                Plugin.Log.LogInfo($"Synced Vanilla: {command} for {pSteamID}");
+                string playerSteamID = (string)AccessTools.Field(typeof(PlayerAvatar), "steamID").GetValue(player);
+                if (string.IsNullOrEmpty(playerSteamID)) continue;
+
+                punView.RPC("TesterUpgradeCommandRPC", RpcTarget.All, playerSteamID, command, amount);
+                Plugin.Log.LogInfo($"Synced Vanilla: {command} for {playerName}({playerSteamID})");
             }
         }
 
         private static void DistributeCustomUpgrade(PhotonView punView, string dictionaryKey, int totalValue)
         {
-            List<PlayerAvatar> players = SemiFunc.PlayerGetAll();
-            foreach (var avatar in players)
+            foreach (PlayerAvatar player in SemiFunc.PlayerGetAll())
             {
-                if (avatar == null || avatar.photonView == null) continue;
-                if (avatar.photonView.ViewID == _targetViewID)
+                if (player == null || player.photonView == null) continue;
+
+                if (player.photonView.ViewID == _targetViewID)
                 {
-                    Plugin.Log.LogInfo($"Skipping original upgrader: {dictionaryKey} for {_targetSteamID}");
+                    Plugin.Log.LogInfo($"Skipping original upgrader: {dictionaryKey} for {_targetPlayerName}({_targetSteamID})");
                     continue;
                 }
 
-                string pSteamID = (string)AccessTools.Field(typeof(PlayerAvatar), "steamID").GetValue(avatar);
-                if (string.IsNullOrEmpty(pSteamID)) continue;
+                string playerName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(player);
+                if (string.IsNullOrEmpty(playerName)) playerName = "Unknown";
 
-                punView.RPC("UpdateStatRPC", RpcTarget.All, dictionaryKey, pSteamID, totalValue);
-                Plugin.Log.LogInfo($"Synced Custom: {dictionaryKey} for {pSteamID}");
+                string playerSteamID = (string)AccessTools.Field(typeof(PlayerAvatar), "steamID").GetValue(player);
+                if (string.IsNullOrEmpty(playerSteamID)) continue;
+
+                punView.RPC("UpdateStatRPC", RpcTarget.All, dictionaryKey, playerSteamID, totalValue);
+                Plugin.Log.LogInfo($"Synced Custom: {dictionaryKey} for {player}({playerSteamID})");
             }
         }
     }
