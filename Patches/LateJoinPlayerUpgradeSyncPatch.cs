@@ -19,7 +19,7 @@ namespace BetterTeamUpgrades.Patches
 
             if (
                 RunManager.instance.levelCurrent == RunManager.instance.levelMainMenu ||
-                RunManager.instance.levelCurrent == RunManager.instance.levelLobby ||
+                RunManager.instance.levelCurrent == RunManager.instance.levelLobbyMenu ||
                 RunManager.instance.levelCurrent == RunManager.instance.levelRecording ||
                 RunManager.instance.levelCurrent == RunManager.instance.levelSplashScreen)
             {
@@ -69,8 +69,6 @@ namespace BetterTeamUpgrades.Patches
                 .Where(id => !string.IsNullOrEmpty(id))
                 .ToList();
 
-            System.Random rand = new System.Random();
-
             foreach (KeyValuePair<string, Dictionary<string, int>> kvp in StatsManager.instance.dictionaryOfDictionaries)
             {
                 if (!kvp.Key.StartsWith("playerUpgrade")) continue;
@@ -100,7 +98,9 @@ namespace BetterTeamUpgrades.Patches
                         {
                             for (int i = 0; i < diff; i++)
                             {
-                                int roll = rand.Next(0, 100);
+                                Plugin.Log.LogInfo($"Late Join: Considering sync {fullKey} for {id} (+1)");
+
+                                int roll = Plugin.Roll(0, 100);
                                 if (roll >= Configuration.LateJoinUpgradeSyncChance.Value)
                                 {
                                     Plugin.Log.LogInfo($"Late Join: Skipped syncing {fullKey} for {id} due to chance roll ({roll} >= {Configuration.LateJoinUpgradeSyncChance.Value})");

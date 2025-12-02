@@ -6,7 +6,7 @@ namespace BetterTeamUpgrades.Config
     internal class Configuration
     {
         public static ConfigEntry<bool> EnableSharedUpgradesPatch;
-        public static ConfigEntry<int> SharedUpgradeChange;
+        public static ConfigEntry<int> SharedUpgradeChance;
         public static ConfigEntry<bool> EnableLateJoinPlayerUpdateSyncPatch;
         public static ConfigEntry<int> LateJoinUpgradeSyncChance;
         public static ConfigEntry<bool> EnableCustomUpgradeSyncing;
@@ -20,10 +20,10 @@ namespace BetterTeamUpgrades.Config
                 "Enables Shared Upgrades for all supported Upgrades"
             );
 
-            SharedUpgradeChange = config.Bind<int>(
+            SharedUpgradeChance = config.Bind<int>(
                 new ConfigDefinition(
                     "Upgrade Sync Settings",
-                    "SharedUpgradeChange"
+                    "SharedUpgradeChance"
                 ),
                 100,
                 new ConfigDescription(

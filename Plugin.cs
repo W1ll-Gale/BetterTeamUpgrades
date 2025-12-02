@@ -25,6 +25,8 @@ namespace BetterTeamUpgrades
 
         private (ConfigEntry<bool> configEntry, Action enablePatch, Action disablePatch, string description)[] _patchArray;
 
+        internal static readonly object RandomLock = new object();
+        internal static readonly System.Random Random = new System.Random();
 
         void Awake()
         {
@@ -93,6 +95,14 @@ namespace BetterTeamUpgrades
                 {
                     Log.LogError($"Failed to disable {description}: {e.Message}");
                 }
+            }
+        }
+
+        internal static int Roll(int min, int max)
+        {
+            lock (Plugin.RandomLock)
+            {
+                return Plugin.Random.Next(min, max);
             }
         }
     }
