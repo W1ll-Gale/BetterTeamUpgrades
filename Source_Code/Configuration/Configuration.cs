@@ -14,7 +14,7 @@ namespace BetterTeamUpgrades.Config
         public static void Init(ConfigFile config)
         {
             EnableSharedUpgradesPatch = config.Bind<bool>(
-                "Upgrade Sync Settings",
+                "Shared Upgrade Settings",
                 "EnableSharedUpgrades",
                 true,
                 "Enables Shared Upgrades for all supported Upgrades"
@@ -22,7 +22,7 @@ namespace BetterTeamUpgrades.Config
 
             SharedUpgradeChance = config.Bind<int>(
                 new ConfigDefinition(
-                    "Upgrade Sync Settings",
+                    "Shared Upgrade Settings",
                     "SharedUpgradeChance"
                 ),
                 100,

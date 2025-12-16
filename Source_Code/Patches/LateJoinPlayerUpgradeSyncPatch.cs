@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using Photon.Pun;
 using System;
+using BepInEx.Configuration;
 
 namespace BetterTeamUpgrades.Patches
 {
@@ -74,7 +75,23 @@ namespace BetterTeamUpgrades.Patches
                 if (!kvp.Key.StartsWith("playerUpgrade")) continue;
 
                 string fullKey = kvp.Key;
-                var upgradeDict = kvp.Value;
+                Dictionary<string, int> upgradeDict = kvp.Value;
+
+                bool isVanilla = SharedUpgradesPatch.VanillaKeys.Contains(fullKey);
+                string section = isVanilla ? "Vanilla Upgrade Settings" : "Modded Upgrade Settings";
+                string displayKey = fullKey.Replace("player", "");
+                ConfigEntry<bool> toggle = Plugin.PlguinConfig.Bind<bool>(section, displayKey, true, $"Enable upgrade syncing for {fullKey}");
+                if (!toggle.Value)
+                {
+                    Plugin.Log.LogInfo($"Late Join: Skipping {fullKey} because config toggle '{section}:{displayKey}' is disabled.");
+                    continue;
+                }
+
+                if (!isVanilla && !Configuration.EnableCustomUpgradeSyncing.Value)
+                {
+                    Plugin.Log.LogInfo($"Late Join: Custom Upgrade Syncing is disabled. Skipping: {fullKey}");
+                    continue;
+                }
 
                 int maxLevel = 0;
                 foreach (string id in steamIDs)
@@ -87,8 +104,6 @@ namespace BetterTeamUpgrades.Patches
 
                 if (maxLevel > 0)
                 {
-                    bool isVanilla = SharedUpgradesPatch.VanillaKeys.Contains(fullKey);
-
                     foreach (string id in steamIDs)
                     {
                         int currentLevel = upgradeDict.ContainsKey(id) ? upgradeDict[id] : 0;

@@ -15,7 +15,7 @@ namespace BetterTeamUpgrades
     {
         private const string mod_guid = "MrBytesized.REPO.BetterTeamUpgrades";
         private const string mod_name = "Better Team Upgrades";
-        private const string mod_version = "2.0.0";
+        private const string mod_version = "2.2.0";
 
         private readonly Harmony harmony = new Harmony(mod_guid);
 
@@ -24,6 +24,7 @@ namespace BetterTeamUpgrades
         internal static ManualLogSource Log;
 
         private (ConfigEntry<bool> configEntry, Action enablePatch, Action disablePatch, string description)[] _patchArray;
+        public static ConfigFile PlguinConfig;
 
         internal static readonly object RandomLock = new object();
         internal static readonly System.Random Random = new System.Random();
@@ -36,10 +37,11 @@ namespace BetterTeamUpgrades
             }
 
             Log = BepInEx.Logging.Logger.CreateLogSource(mod_guid);
+            PlguinConfig = Config;
 
             harmony.PatchAll(typeof(StatsManagerInitPatch));
 
-            Configuration.Init(Config);
+            Configuration.Init(PlguinConfig);
 
             _patchArray = new (ConfigEntry<bool>, Action, Action, string)[]
             {

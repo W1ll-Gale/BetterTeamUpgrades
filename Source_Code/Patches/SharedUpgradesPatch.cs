@@ -3,6 +3,8 @@ using HarmonyLib;
 using Photon.Pun;
 using System.Collections.Generic;
 using System;
+using System.Runtime.CompilerServices;
+using BepInEx.Configuration;
 
 namespace BetterTeamUpgrades.Patches
 {
@@ -10,6 +12,7 @@ namespace BetterTeamUpgrades.Patches
     public class SharedUpgradesPatch
     {
         public static HashSet<string> VanillaKeys = new HashSet<string>();
+        public static HashSet<string> ModdedKeys = new HashSet<string>();
 
         public struct UpgradeContext
         {
@@ -37,7 +40,7 @@ namespace BetterTeamUpgrades.Patches
             string targetPlayerName = (string)AccessTools.Field(typeof(PlayerAvatar), "playerName").GetValue(avatar);
             string targetSteamID = (string)AccessTools.Field(typeof(PlayerAvatar), "steamID").GetValue(avatar);
 
-            var preUpgradeStats = new Dictionary<string, int>();
+            Dictionary<string, int> preUpgradeStats = new Dictionary<string, int>();
 
             if (StatsManager.instance != null)
             {
@@ -80,6 +83,16 @@ namespace BetterTeamUpgrades.Patches
             {
                 if (!kvp.Key.StartsWith("playerUpgrade")) continue;
 
+                bool isVanilla = VanillaKeys.Contains(kvp.Key);
+                string section = isVanilla ? "Vanilla Upgrade Settings" : "Modded Upgrade Settings";
+                string displayKey = kvp.Key.Replace("player", "");
+                ConfigEntry<bool> toggle = Plugin.PlguinConfig.Bind<bool>(section, displayKey, true, $"Enable shared upgrade syncing for {kvp.Key}");
+                if (!toggle.Value)
+                {
+                    Plugin.Log.LogInfo($"SharedUpgrades: Skipping {kvp.Key} because config toggle '{section}:{displayKey}' is disabled.");
+                    continue;
+                }
+
                 int currentVal = kvp.Value.ContainsKey(__state.SteamID) ? kvp.Value[__state.SteamID] : 0;
                 int preVal = __state.PreUpgradeStats.ContainsKey(kvp.Key) ? __state.PreUpgradeStats[kvp.Key] : 0;
 
@@ -97,7 +110,7 @@ namespace BetterTeamUpgrades.Patches
                         continue;
                     }
 
-                    if (VanillaKeys.Contains(fullKey))
+                    if (isVanilla)
                     {
                         string commandName = fullKey.Substring("playerUpgrade".Length);
                         DistributeVanillaUpgrade(punView, commandName, diff, __state);
